@@ -77,7 +77,8 @@ if on_duplicados:
 else: duplicados = 'Manter'
 
 try:
-    tabela = st.session_state['df']
+    if 'df' in st.session_state:
+        tabela = st.session_state['df']
 
     # Filtrar alunos por situação
     if situacao == 'Ativos':
@@ -88,10 +89,9 @@ try:
 
     # Filtrar alunos por Adimplência
     if adimplencia == 'Adimplentes':
-        tabela = tabela.loc[(tabela['Inadimplente'] == 'Ativo') | (tabela['SituacaoAluno'] == 'Ativo')].reset_index(drop=True)
-    elif adimplencia == 'Não-Ativos':
-        tabela = tabela.loc[tabela['Inadimplente'] != 'Ativo'].reset_index(drop=True)
-        tabela = tabela.loc[tabela['Inadimplente'] != 'Ativo/Turma nova'].reset_index(drop=True)
+        tabela = tabela.loc[(tabela['Inadimplente'] == 'Não') | (tabela['SituacaoAluno'] == 'Ativo')].reset_index(drop=True)
+    elif adimplencia == 'Inadimplentes':
+        tabela = tabela.loc[tabela['Inadimplente'] == 'Sim'].reset_index(drop=True)
 
     # Formata colunas de telefones e remove colunas desnecessárias
     colunas_a_formatar = ['FoneResidencial', 'FoneCelular']
@@ -125,6 +125,29 @@ try:
 
     # Organiza por ordem alfabética
     tabela.sort_values(by='Nome', inplace=True )
+
+    # Converte DataFrame para Excel
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        tabela.to_excel(writer, index=False, sheet_name='Sheet1')
+
+    # Cria o download button
+    st.download_button(
+        label="Download Excel",
+        data=output.getvalue(),
+        file_name="Planilha.xlsx",
+        mime="application/vnd.ms-excel"
+    )
+
+    # Cria o arquivo csv
+    csv = tabela.to_csv(index=False).encode('utf-8')
+
+    st.download_button(
+        label="Download CSV",
+        data=csv,
+        file_name="Planilha.csv",
+        mime="text/csv",
+    )
 
 except:
     st.markdown('\n')

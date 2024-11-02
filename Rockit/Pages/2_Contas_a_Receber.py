@@ -92,7 +92,8 @@ else: duplicados = 'Manter'
 
 
 try:
-    tabela = st.session_state['df']
+    if 'df' in st.session_state:
+        tabela = st.session_state['df']
 
     # Filtra alunos por Situação
     if situacao == 'Ativos':
