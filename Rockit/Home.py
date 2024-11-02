@@ -4,8 +4,6 @@ import pandas as pd
 st.set_page_config(page_title='ETL de contatos para whatsapp', page_icon=':telephone_receiver:')
 
 
-st.image('logo.png', width=150, use_column_width=False)
-
 st.title('Gerador de listas de disparo')
 st.markdown('Faça aqui o upload do seu arquivo caso seja um relatório gerado pelo Sponte.\n\n'
             'Para arquivos gerados de outras fontes, entre em **Lista Avulsa**.')
