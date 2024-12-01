@@ -77,8 +77,7 @@ if on_duplicados:
 else: duplicados = 'Manter'
 
 try:
-    if 'df' in st.session_state:
-        tabela = st.session_state['df']
+    tabela = st.session_state['df']
 
     # Filtrar alunos por situação
     if situacao == 'Ativos':
@@ -89,7 +88,7 @@ try:
 
     # Filtrar alunos por Adimplência
     if adimplencia == 'Adimplentes':
-        tabela = tabela.loc[(tabela['Inadimplente'] == 'Não') | (tabela['SituacaoAluno'] == 'Ativo')].reset_index(drop=True)
+        tabela = tabela.loc[tabela['Inadimplente'] == 'Não'].reset_index(drop=True)
     elif adimplencia == 'Inadimplentes':
         tabela = tabela.loc[tabela['Inadimplente'] == 'Sim'].reset_index(drop=True)
 
@@ -126,30 +125,57 @@ try:
     # Organiza por ordem alfabética
     tabela.sort_values(by='Nome', inplace=True )
 
-    # Converte DataFrame para Excel
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        tabela.to_excel(writer, index=False, sheet_name='Sheet1')
+    st.dataframe(tabela.reset_index(drop=True))
 
-    # Cria o download button
-    st.download_button(
-        label="Download Excel",
-        data=output.getvalue(),
-        file_name="Planilha.xlsx",
-        mime="application/vnd.ms-excel"
-    )
+    # Verifica se a tabela existe
+    if 'tabela' not in locals() or tabela is None:
+        st.warning("Nenhuma tabela disponível para exportar.")
+    else:
+        try:
+            # Cria o arquivo Excel em um objeto BytesIO
+            xls_buffer = BytesIO()
+            with pd.ExcelWriter(xls_buffer, engine='xlsxwriter') as writer:
+                tabela.to_excel(writer, index=False, sheet_name='Dados')
 
-    # Cria o arquivo csv
-    csv = tabela.to_csv(index=False).encode('utf-8')
+            # Recupera o conteúdo do arquivo Excel como bytes
+            excel_data = xls_buffer.getvalue()
 
-    st.download_button(
-        label="Download CSV",
-        data=csv,
-        file_name="Planilha.csv",
-        mime="text/csv",
-    )
+            # Botão para download do Excel
+            st.download_button(
+                label="Download Excel",
+                data=excel_data,
+                file_name="Planilha.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        except Exception as e:
+            st.error(f"Não foi possível gerar o arquivo Excel. Erro: {e}")
 
-except:
+
+    # Verifica se a tabela existe
+    if 'tabela' not in locals() or tabela is None:
+        st.warning("Nenhuma tabela disponível para exportar.")
+    else:
+        try:
+            # Cria o arquivo CSV em um objeto StringIO
+            csv_buffer = StringIO()
+            tabela.to_csv(csv_buffer, index=False)
+
+            # Recupera o conteúdo do CSV como string
+            csv_data = csv_buffer.getvalue()
+
+            # Botão para download do CSV
+            st.download_button(
+                label="Download CSV",
+                data=csv_data,
+                file_name="Planilha.csv",
+                mime="text/csv"
+            )
+        except Exception as e:
+            st.error(f"Não foi possível gerar o arquivo CSV. Erro: {e}")
+
+
+except Exception as e:
+    st.error(f"Não foi possível ler o arquivo. Erro: {e}")
     st.markdown('\n')
     st.markdown('Faça o upload do arquivo em Home.')
     if st.button(label='Home', type='primary'):

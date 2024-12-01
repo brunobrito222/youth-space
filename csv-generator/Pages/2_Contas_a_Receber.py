@@ -5,6 +5,7 @@ import re
 import io
 from io import BytesIO
 pd.options.mode.chained_assignment = None
+from io import StringIO
 
 st.set_page_config(page_icon=':telephone_receiver:')
 
@@ -92,8 +93,7 @@ else: duplicados = 'Manter'
 
 
 try:
-    if 'df' in st.session_state:
-        tabela = st.session_state['df']
+    tabela = st.session_state['df']
 
     # Filtra alunos por Situação
     if situacao == 'Ativos':
@@ -238,29 +238,57 @@ try:
     # Exibir os gráficos no Streamlit
     st.pyplot(fig)
 
-    # Converte DataFrame para Excel
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        tabela.to_excel(writer, index=False, sheet_name='Sheet1')
 
-    # Cria o download button
-    st.download_button(
-        label="Download Excel",
-        data=output.getvalue(),
-        file_name="Planilha.xlsx",
-        mime="application/vnd.ms-excel"
-    )
+    # Verifica se a tabela existe
+    if 'tabela' not in locals() or tabela is None:
+        st.warning("Nenhuma tabela disponível para exportar.")
+    else:
+        try:
+            # Cria o arquivo Excel em um objeto BytesIO
+            xls_buffer = BytesIO()
+            with pd.ExcelWriter(xls_buffer, engine='xlsxwriter') as writer:
+                tabela.to_excel(writer, index=False, sheet_name='Dados')
 
-    # Cria o arquivo csv
-    csv = tabela.to_csv(index=False).encode('utf-8')
+            # Recupera o conteúdo do arquivo Excel como bytes
+            excel_data = xls_buffer.getvalue()
 
-    st.download_button(
-        label="Download CSV",
-        data=csv,
-        file_name="Planilha.csv",
-        mime="text/csv",
-    )
-except:
+            # Botão para download do Excel
+            st.download_button(
+                label="Download Excel",
+                data=excel_data,
+                file_name="Planilha.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        except Exception as e:
+            st.error(f"Não foi possível gerar o arquivo Excel. Erro: {e}")
+
+
+    # Verifica se a tabela existe
+    if 'tabela' not in locals() or tabela is None:
+        st.warning("Nenhuma tabela disponível para exportar.")
+    else:
+        try:
+            # Cria o arquivo CSV em um objeto StringIO
+            csv_buffer = StringIO()
+            tabela.to_csv(csv_buffer, index=False)
+
+            # Recupera o conteúdo do CSV como string
+            csv_data = csv_buffer.getvalue()
+
+            # Botão para download do CSV
+            st.download_button(
+                label="Download CSV",
+                data=csv_data,
+                file_name="Planilha.csv",
+                mime="text/csv"
+            )
+        except Exception as e:
+            st.error(f"Não foi possível gerar o arquivo CSV. Erro: {e}")
+
+
+
+except Exception as e:
+    st.error(f"Não foi possível ler o arquivo. Erro: {e}")
     st.markdown('\n')
     st.markdown('Faça o upload do arquivo em Home.')
     if st.button(label='Home', type='primary'):
